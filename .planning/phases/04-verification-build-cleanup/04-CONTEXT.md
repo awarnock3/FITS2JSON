@@ -16,22 +16,24 @@ Harden `fits2json` so the existing single-C / CFITSIO CLI has a repeatable build
 ### Verification command surface
 - **D-01:** `make -C src test` is the canonical verification entry point for automation.
 - **D-02:** The `test` target should build the CLI and run all repo-local smoke checks by default.
-- **D-03:** The default verification path should regenerate the synthetic edge fixture and include error-path checks, not just happy-path JSON smoke tests.
+- **D-03:** The default verification path should regenerate the synthetic edge fixture on every test run and include error-path checks, not just happy-path JSON smoke tests.
+- **D-04:** Python 3 is an accepted prerequisite for `make -C src test` because the repo-local verification harness is already Python-based.
 
 ### Failure contract
-- **D-04:** On failure, keep stdout empty and write diagnostics to stderr only.
-- **D-05:** Failures should include a short `fits2json:` message on stderr, plus CFITSIO details when they are available and relevant.
-- **D-06:** Lock a simple stable exit-code policy: `2` for usage/invalid invocation, `1` for conversion/build/test failures.
+- **D-05:** On usage and other failures detected before emission begins, keep stdout empty and write diagnostics to stderr only.
+- **D-06:** Detectable stdout write or broken-pipe failures after emission begins should still surface a short `fits2json:` stderr diagnostic and exit `1`; they do not retroactively promise zero-byte stdout once bytes were already accepted downstream.
+- **D-07:** Failures should include a short `fits2json:` message on stderr, plus CFITSIO details when they are available and relevant.
+- **D-08:** Lock a simple stable exit-code policy: `2` for usage/invalid invocation, `1` for conversion/build/test failures.
 
 ### Build portability
-- **D-07:** `src/Makefile` should prefer `pkg-config cfitsio` for dependency discovery.
-- **D-08:** The build must still allow standard make-variable overrides such as `CPPFLAGS` and `LDFLAGS`.
-- **D-09:** If CFITSIO cannot be found, the build should fail early with a clear prerequisite message.
+- **D-09:** `src/Makefile` should prefer `pkg-config cfitsio` for dependency discovery.
+- **D-10:** The build must still allow standard make-variable overrides such as `CPPFLAGS` and `LDFLAGS`.
+- **D-11:** If CFITSIO cannot be found, the build should fail early with a clear prerequisite message.
 
 ### Cleanup behavior
-- **D-10:** `make -C src clean` should remove build outputs and test-generated artifacts only.
-- **D-11:** Cleanup should cover the built binary, object files, compiled helper binaries, generated FITS fixtures, and caches created by verification.
-- **D-12:** Cleanup must never delete checked-in files, even when those files are reproducible.
+- **D-12:** `make -C src clean` should remove build outputs and test-generated artifacts only.
+- **D-13:** Cleanup should cover the built binary, object files, compiled helper binaries, generated FITS fixtures, and caches created by verification.
+- **D-14:** Cleanup must never delete checked-in files, even when those files are reproducible.
 
 ### the agent's Discretion
 - Exact Makefile target/helper layout needed to implement `test` and `clean` cleanly within `src/Makefile`

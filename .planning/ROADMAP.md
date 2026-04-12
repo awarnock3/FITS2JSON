@@ -59,7 +59,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can build the tool from `src/Makefile` as a single executable named `fits2json`.
   2. User receives diagnostics on stderr and a non-zero exit code when a FITS file cannot be opened or converted.
-  3. User never receives partial or malformed JSON on stdout when conversion fails.
+  3. User never receives partial or malformed JSON on stdout for failures detected before emission begins, and detectable stdout write failures still surface deterministic stderr diagnostics and a non-zero exit code.
   4. User gets the same output shape and failure behavior across repeated runs with the same input.
 **Plans**: TBD
 
