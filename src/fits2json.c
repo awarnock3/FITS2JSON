@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include "fitsio.h"
 
@@ -51,6 +52,26 @@ static void print_usage(FILE *stream)
     fprintf(stream, "  fits2json file.fits[GTI] - convert the GTI extension header\n\n");
     fprintf(stream, "Note that it may be necessary to enclose the input filename in\n");
     fprintf(stream, "single quotes on the Unix command line.\n");
+}
+
+static int fail_usage(void)
+{
+    fprintf(stderr, "fits2json: expected exactly one FITS path argument\n");
+    print_usage(stderr);
+    return 2;
+}
+
+static int fail_cfitsio(const char *message, int status)
+{
+    fprintf(stderr, "fits2json: %s\n", message);
+    fits_report_error(stderr, status);
+    return 1;
+}
+
+static int fail_app(const char *message)
+{
+    fprintf(stderr, "fits2json: %s\n", message);
+    return 1;
 }
 
 static char *xstrdup(const char *value)
@@ -592,13 +613,13 @@ int main(int argc, char *argv[])
     memset(&document, 0, sizeof(document));
 
     if (argc != 2) {
-        print_usage(stderr);
-        return 2;
+        return fail_usage();
     }
 
+    signal(SIGPIPE, SIG_IGN);
+
     if (fits_open_file(&fptr, argv[1], READONLY, &status)) {
-        fits_report_error(stderr, status);
-        return status;
+        return fail_cfitsio("failed to open or select FITS input", status);
     }
 
     fits_get_hdu_num(fptr, &current_hdu);
@@ -631,23 +652,19 @@ int main(int argc, char *argv[])
     free_fits_document(&document);
 
     if (status != 0) {
-        fits_report_error(stderr, status);
-        return status;
+        return fail_cfitsio("failed to convert FITS header data", status);
     }
 
     if (app_status == APP_STATUS_MEMORY) {
-        fprintf(stderr, "fits2json: out of memory while building JSON output\n");
-        return 1;
+        return fail_app("out of memory while building JSON output");
     }
 
     if (app_status == APP_STATUS_WRITE) {
-        fprintf(stderr, "fits2json: failed while writing JSON output\n");
-        return 1;
+        return fail_app("failed while writing JSON output");
     }
 
     if (app_status != 0) {
-        fprintf(stderr, "fits2json: unexpected internal error\n");
-        return 1;
+        return fail_app("unexpected internal error");
     }
 
     return 0;
