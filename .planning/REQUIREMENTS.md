@@ -53,26 +53,26 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HEAD-01 | Phase TBD | Pending |
-| HEAD-02 | Phase TBD | Pending |
-| HEAD-03 | Phase TBD | Pending |
-| HEAD-04 | Phase TBD | Pending |
-| HEAD-05 | Phase TBD | Pending |
-| FITS-01 | Phase TBD | Pending |
-| FITS-02 | Phase TBD | Pending |
-| FITS-03 | Phase TBD | Pending |
-| FITS-04 | Phase TBD | Pending |
-| CLI-01 | Phase TBD | Pending |
-| CLI-02 | Phase TBD | Pending |
-| CLI-03 | Phase TBD | Pending |
-| BLD-01 | Phase TBD | Pending |
-| BLD-02 | Phase TBD | Pending |
+| HEAD-01 | Phase 2 | Pending |
+| HEAD-02 | Phase 3 | Pending |
+| HEAD-03 | Phase 1 | Pending |
+| HEAD-04 | Phase 2 | Pending |
+| HEAD-05 | Phase 2 | Pending |
+| FITS-01 | Phase 2 | Pending |
+| FITS-02 | Phase 2 | Pending |
+| FITS-03 | Phase 2 | Pending |
+| FITS-04 | Phase 2 | Pending |
+| CLI-01 | Phase 3 | Pending |
+| CLI-02 | Phase 4 | Pending |
+| CLI-03 | Phase 4 | Pending |
+| BLD-01 | Phase 4 | Pending |
+| BLD-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-12*
-*Last updated: 2026-04-12 after initial definition*
+*Last updated: 2026-04-12 after roadmap creation*
