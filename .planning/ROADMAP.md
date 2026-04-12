@@ -27,7 +27,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can invoke the renamed conversion path using the same FITS filename selectors already accepted today, including whole-file, numeric-extension, and named-extension forms.
   2. User can request a specific HDU through the renamed `fits2json` implementation entry point instead of `src/listhead.c`.
   3. User can stay on a single C implementation path with no wrapper script or second-language launcher introduced during the rename.
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] `01-01-PLAN.md` — Rename the single-file CLI entry point and Makefile target to `fits2json` while preserving CFITSIO selector behavior.
 
 ### Phase 2: Header Modeling for Selected HDU
 **Goal**: Users can convert a selected HDU into accurate structured JSON without losing FITS header semantics.
@@ -68,7 +70,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Seam Extraction & Rename | 0/TBD | Not started | - |
+| 1. Seam Extraction & Rename | 0/1 | Not started | - |
 | 2. Header Modeling for Selected HDU | 0/TBD | Not started | - |
 | 3. Whole-File JSON Emission | 0/TBD | Not started | - |
 | 4. Verification & Build Cleanup | 0/TBD | Not started | - |
