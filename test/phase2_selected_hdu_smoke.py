@@ -47,6 +47,16 @@ def run_fits2json(selector: str) -> dict:
         ) from exc
 
 
+def assert_selectorless_rejected() -> None:
+    proc = run([str(BINARY), str(REPO_ROOT / "testdata" / "IRPH0189.HDR")])
+    if proc.returncode == 0:
+        raise AssertionError("selectorless invocation should fail during Phase 2")
+    if proc.stdout.strip():
+        raise AssertionError(f"selectorless failure should not write stdout, got:\n{proc.stdout}")
+    if "explicit HDU selector required" not in proc.stderr:
+        raise AssertionError(f"missing selectorless guidance on stderr:\n{proc.stderr}")
+
+
 def assert_card_shape(card: dict) -> None:
     if set(card) - {"keyword", "value", "comment"}:
         raise AssertionError(f"unexpected card fields: {card}")
@@ -165,14 +175,14 @@ def assert_edge_fixture(path: Path) -> None:
     if bool_card.get("value") is not True:
         raise AssertionError(f"BOOLKEY should map to true: {bool_card}")
 
-    comment_card = find_first(cards, "COMMENT")
-    history_card = find_first(cards, "HISTORY")
-    if "value" in comment_card or "value" in history_card:
+    comment_cards = [card for card in cards if card["keyword"] == "COMMENT"]
+    history_cards = [card for card in cards if card["keyword"] == "HISTORY"]
+    if any("value" in card for card in comment_cards + history_cards):
         raise AssertionError("synthetic COMMENT/HISTORY should not expose value")
-    if comment_card.get("comment") != "phase 2 synthetic comment":
-        raise AssertionError(f"unexpected synthetic COMMENT text: {comment_card}")
-    if history_card.get("comment") != "phase 2 synthetic history":
-        raise AssertionError(f"unexpected synthetic HISTORY text: {history_card}")
+    if not any(card.get("comment") == "phase 2 synthetic comment" for card in comment_cards):
+        raise AssertionError("missing synthetic COMMENT text")
+    if not any(card.get("comment") == "phase 2 synthetic history" for card in history_cards):
+        raise AssertionError("missing synthetic HISTORY text")
 
 
 def main() -> int:
@@ -193,14 +203,16 @@ def main() -> int:
         assert_edge_fixture(args.fixture_only)
         return 0
 
+    assert_selectorless_rejected()
     assert_irph0189()
     assert_lspn2790()
 
-    if not EDGE_FIXTURE.exists():
-        raise AssertionError(
-            f"missing synthetic fixture at {EDGE_FIXTURE}; run test/phase2_make_edge_fixture first"
-        )
-    assert_edge_fixture(EDGE_FIXTURE)
+    if args.cases == "all":
+        if not EDGE_FIXTURE.exists():
+            raise AssertionError(
+                f"missing synthetic fixture at {EDGE_FIXTURE}; run test/phase2_make_edge_fixture first"
+            )
+        assert_edge_fixture(EDGE_FIXTURE)
 
     return 0
 

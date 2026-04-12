@@ -55,5 +55,6 @@ dkms.conf
 *.dwo
 
 # Phase 2 generated verification assets
+/src/fits2json
 /test/phase2_make_edge_fixture
 /testdata/phase2-edge.fits
