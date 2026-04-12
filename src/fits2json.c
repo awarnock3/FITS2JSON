@@ -10,17 +10,17 @@ int main(int argc, char *argv[])
     int single = 0, hdupos, nkeys, ii;
 
     if (argc != 2) {
-      printf("Usage:  listhead filename[ext] \n");
+      printf("Usage:  fits2json filename[ext] \n");
       printf("\n");
       printf("List the FITS header keywords in a single extension, or, if \n");
       printf("ext is not given, list the keywords in all the extensions. \n");
       printf("\n");
       printf("Examples: \n");
-      printf("   listhead file.fits      - list every header in the file \n");
-      printf("   listhead file.fits[0]   - list primary array header \n");
-      printf("   listhead file.fits[2]   - list header of 2nd extension \n");
-      printf("   listhead file.fits+2    - same as above \n");
-      printf("   listhead file.fits[GTI] - list header of GTI extension\n");
+      printf("   fits2json file.fits      - list every header in the file \n");
+      printf("   fits2json file.fits[0]   - list primary array header \n");
+      printf("   fits2json file.fits[2]   - list header of 2nd extension \n");
+      printf("   fits2json file.fits+2    - same as above \n");
+      printf("   fits2json file.fits[GTI] - list header of GTI extension\n");
       printf("\n");
       printf("Note that it may be necessary to enclose the input file\n");
       printf("name in single quote characters on the Unix command line.\n");
@@ -60,4 +60,3 @@ int main(int argc, char *argv[])
     if (status) fits_report_error(stderr, status); /* print any error message */
     return(status);
 }
-
