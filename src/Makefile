@@ -15,7 +15,7 @@ OBJS = $(SRCS:$(SRCDIR)/%.c=%.o)
 HELPER = ../test/phase2_make_edge_fixture
 EDGE_FIXTURE = ../testdata/phase2-edge.fits
 
-.PHONY: all test clean check-cfitsio check-python force
+.PHONY: all test clean check-cfitsio check-python force rebuild-fits2json
 .DELETE_ON_ERROR:
 
 all: fits2json
@@ -46,7 +46,10 @@ force:
 $(EDGE_FIXTURE): force $(HELPER)
 	$(HELPER) $(EDGE_FIXTURE)
 
-test: check-python fits2json $(HELPER) $(EDGE_FIXTURE)
+rebuild-fits2json: force
+	$(MAKE) --always-make fits2json
+
+test: check-python rebuild-fits2json $(HELPER) $(EDGE_FIXTURE)
 	$(PYTHON) ../test/phase2_selected_hdu_smoke.py
 	$(PYTHON) ../test/phase3_whole_file_smoke.py
 	$(PYTHON) ../test/phase4_cli_contract_smoke.py
