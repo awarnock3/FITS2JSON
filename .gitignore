@@ -53,3 +53,7 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Phase 2 generated verification assets
+/test/phase2_make_edge_fixture
+/testdata/phase2-edge.fits
