@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Seam Extraction & Rename** - Rename the brownfield entry point while preserving current HDU-selection behavior. (completed 2026-04-12)
 - [x] **Phase 2: Header Modeling for Selected HDU** - Deliver accurate structured JSON for one requested HDU. (completed 2026-04-12)
 - [x] **Phase 3: Whole-File JSON Emission** - Extend JSON output to one document covering all HDUs by default. (completed 2026-04-12)
-- [ ] **Phase 4: Verification & Build Cleanup** - Harden failure behavior and finalize repeatable delivery from the Makefile.
+- [x] **Phase 4: Verification & Build Cleanup** - Harden failure behavior and finalize repeatable delivery from the Makefile. (completed 2026-04-12)
 
 ## Phase Details
 
@@ -73,4 +73,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Seam Extraction & Rename | 1/1 | Complete    | 2026-04-12 |
 | 2. Header Modeling for Selected HDU | 1/1 | Complete    | 2026-04-12 |
 | 3. Whole-File JSON Emission | 1/1 | Complete    | 2026-04-12 |
-| 4. Verification & Build Cleanup | 0/TBD | Not started | - |
+| 4. Verification & Build Cleanup | 1/1 | Complete    | 2026-04-12 |

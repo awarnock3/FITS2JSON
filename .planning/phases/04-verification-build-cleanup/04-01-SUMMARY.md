@@ -42,6 +42,7 @@ Each task was committed atomically:
 1. **Task 1: Add Phase 4 CLI-contract smoke coverage** - `50f4a5b` (test)
 2. **Task 2: Harden runtime failure handling and exit-code mapping** - `4824769` (fix)
 3. **Task 3: Make `src/Makefile` the canonical verification and cleanup surface** - `81aabfe` (build)
+4. **Task 3 follow-up: Force a fresh CLI rebuild on every `make -C src test` run** - `5e6baa2` (build)
 
 **Plan metadata:** `b50378f` (docs: research + execution plan)
 
@@ -62,6 +63,7 @@ None - plan executed as written after the planning pass resolved the broken-pipe
 ## Issues Encountered
 
 - The first broken-pipe smoke probe closed the read end too late, allowing small JSON outputs to finish before the writer observed a pipe failure; the probe was tightened to start the CLI with no reader at all so the write-path failure becomes deterministic
+- The first verifier pass found that repeated `make -C src test` runs were not forcing a fresh `fits2json` rebuild; the `test` target was updated to run `$(MAKE) --always-make fits2json` so the canonical verification command now rebuilds the CLI every time
 
 ## User Setup Required
 
