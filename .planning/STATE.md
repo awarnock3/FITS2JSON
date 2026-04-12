@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Given a FITS file path, the tool must produce reliable machine-readable JSON for header metadata with as little friction as the current header-dumping workflow.
-**Current focus:** Phase 1 — Seam Extraction & Rename
+**Current focus:** Phase 2 — Header Modeling for Selected HDU
 
 ## Current Position
 
 Phase: 2
 Plan: Not started
-Status: Executing Phase 1
+Status: Context gathered for Phase 2
 Last activity: 2026-04-12
 
 Progress: [░░░░░░░░░░] 0%
