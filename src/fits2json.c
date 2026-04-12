@@ -7,8 +7,7 @@
 enum {
     APP_STATUS_USAGE = -1,
     APP_STATUS_MEMORY = -2,
-    APP_STATUS_WRITE = -3,
-    APP_STATUS_SELECTOR_REQUIRED = -4
+    APP_STATUS_WRITE = -3
 };
 
 enum value_kind {
@@ -34,12 +33,18 @@ struct hdu_model {
     size_t capacity;
 };
 
+struct fits_document {
+    struct hdu_model *hdus;
+    size_t count;
+    size_t capacity;
+};
+
 static void print_usage(FILE *stream)
 {
     fprintf(stream, "Usage: fits2json filename[ext]\n\n");
-    fprintf(stream, "Convert one selected FITS HDU header to JSON on stdout.\n");
-    fprintf(stream, "Phase 2 requires an explicit HDU selector; whole-file JSON is deferred.\n\n");
+    fprintf(stream, "Convert FITS header data to JSON on stdout.\n\n");
     fprintf(stream, "Examples:\n");
+    fprintf(stream, "  fits2json file.fits      - convert every HDU header as a JSON array\n");
     fprintf(stream, "  fits2json file.fits[0]   - convert the primary array header\n");
     fprintf(stream, "  fits2json file.fits[2]   - convert the 2nd extension header\n");
     fprintf(stream, "  fits2json file.fits+2    - same as above\n");
@@ -95,6 +100,22 @@ static void free_hdu_model(struct hdu_model *model)
     memset(model, 0, sizeof(*model));
 }
 
+static void free_fits_document(struct fits_document *document)
+{
+    size_t index;
+
+    if (document == NULL) {
+        return;
+    }
+
+    for (index = 0; index < document->count; index++) {
+        free_hdu_model(&document->hdus[index]);
+    }
+
+    free(document->hdus);
+    memset(document, 0, sizeof(*document));
+}
+
 static int append_card(struct hdu_model *model, struct header_card *card)
 {
     struct header_card *new_cards;
@@ -113,6 +134,27 @@ static int append_card(struct hdu_model *model, struct header_card *card)
 
     model->cards[model->count++] = *card;
     memset(card, 0, sizeof(*card));
+    return 0;
+}
+
+static int append_hdu_model(struct fits_document *document, struct hdu_model *model)
+{
+    struct hdu_model *new_hdus;
+    size_t new_capacity;
+
+    if (document->count == document->capacity) {
+        new_capacity = document->capacity == 0 ? 8 : document->capacity * 2;
+        new_hdus = realloc(document->hdus, new_capacity * sizeof(*new_hdus));
+        if (new_hdus == NULL) {
+            return APP_STATUS_MEMORY;
+        }
+
+        document->hdus = new_hdus;
+        document->capacity = new_capacity;
+    }
+
+    document->hdus[document->count++] = *model;
+    memset(model, 0, sizeof(*model));
     return 0;
 }
 
@@ -365,7 +407,44 @@ static int read_selected_hdu_model(fitsfile *fptr, struct hdu_model *model, int 
     return 0;
 }
 
-static int emit_hdu_json(FILE *stream, const struct hdu_model *model)
+static int read_whole_file_document(fitsfile *fptr, struct fits_document *document, int *status)
+{
+    int hdu_count = 0;
+    int hdu_index;
+
+    fits_get_num_hdus(fptr, &hdu_count, status);
+    if (*status) {
+        return *status;
+    }
+
+    for (hdu_index = 1; hdu_index <= hdu_count; hdu_index++) {
+        struct hdu_model model;
+        int app_status;
+
+        memset(&model, 0, sizeof(model));
+
+        fits_movabs_hdu(fptr, hdu_index, NULL, status);
+        if (*status) {
+            return *status;
+        }
+
+        app_status = read_selected_hdu_model(fptr, &model, status);
+        if (app_status != 0) {
+            free_hdu_model(&model);
+            return app_status;
+        }
+
+        app_status = append_hdu_model(document, &model);
+        if (app_status != 0) {
+            free_hdu_model(&model);
+            return app_status;
+        }
+    }
+
+    return 0;
+}
+
+static int emit_hdu_json_object(FILE *stream, const struct hdu_model *model)
 {
     size_t index;
     int status;
@@ -440,7 +519,53 @@ static int emit_hdu_json(FILE *stream, const struct hdu_model *model)
         }
     }
 
-    status = write_text(stream, "]}\n");
+    return write_text(stream, "]}");
+}
+
+static int emit_hdu_json(FILE *stream, const struct hdu_model *model)
+{
+    int status;
+
+    status = emit_hdu_json_object(stream, model);
+    if (status != 0) {
+        return status;
+    }
+
+    if (fputc('\n', stream) == EOF) {
+        return APP_STATUS_WRITE;
+    }
+
+    if (fflush(stream) == EOF) {
+        return APP_STATUS_WRITE;
+    }
+
+    return 0;
+}
+
+static int emit_document_json(FILE *stream, const struct fits_document *document)
+{
+    size_t index;
+    int status;
+
+    status = write_text(stream, "[");
+    if (status != 0) {
+        return status;
+    }
+
+    for (index = 0; index < document->count; index++) {
+        if (index > 0) {
+            if (fputc(',', stream) == EOF) {
+                return APP_STATUS_WRITE;
+            }
+        }
+
+        status = emit_hdu_json_object(stream, &document->hdus[index]);
+        if (status != 0) {
+            return status;
+        }
+    }
+
+    status = write_text(stream, "]\n");
     if (status != 0) {
         return status;
     }
@@ -456,12 +581,15 @@ int main(int argc, char *argv[])
 {
     fitsfile *fptr = NULL;
     struct hdu_model model;
+    struct fits_document document;
     int status = 0;
     int app_status = 0;
     int current_hdu = 0;
     int close_status = 0;
+    int explicit_selector = 0;
 
     memset(&model, 0, sizeof(model));
+    memset(&document, 0, sizeof(document));
 
     if (argc != 2) {
         print_usage(stderr);
@@ -474,13 +602,14 @@ int main(int argc, char *argv[])
     }
 
     fits_get_hdu_num(fptr, &current_hdu);
-    if (status == 0 && !selector_was_provided(argv[1], current_hdu)) {
-        fprintf(stderr, "fits2json: explicit HDU selector required in Phase 2; whole-file JSON is deferred\n");
-        app_status = APP_STATUS_SELECTOR_REQUIRED;
+    if (status == 0) {
+        explicit_selector = selector_was_provided(argv[1], current_hdu);
     }
 
-    if (status == 0 && app_status == 0) {
+    if (status == 0 && explicit_selector) {
         app_status = read_selected_hdu_model(fptr, &model, &status);
+    } else if (status == 0) {
+        app_status = read_whole_file_document(fptr, &document, &status);
     }
 
     if (fptr != NULL) {
@@ -491,19 +620,19 @@ int main(int argc, char *argv[])
     }
 
     if (status == 0 && app_status == 0) {
-        app_status = emit_hdu_json(stdout, &model);
+        if (explicit_selector) {
+            app_status = emit_hdu_json(stdout, &model);
+        } else {
+            app_status = emit_document_json(stdout, &document);
+        }
     }
 
     free_hdu_model(&model);
+    free_fits_document(&document);
 
     if (status != 0) {
         fits_report_error(stderr, status);
         return status;
-    }
-
-    if (app_status == APP_STATUS_SELECTOR_REQUIRED) {
-        print_usage(stderr);
-        return 2;
     }
 
     if (app_status == APP_STATUS_MEMORY) {
