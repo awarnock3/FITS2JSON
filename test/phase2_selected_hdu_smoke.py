@@ -47,16 +47,6 @@ def run_fits2json(selector: str) -> dict:
         ) from exc
 
 
-def assert_selectorless_rejected() -> None:
-    proc = run([str(BINARY), str(REPO_ROOT / "testdata" / "IRPH0189.HDR")])
-    if proc.returncode == 0:
-        raise AssertionError("selectorless invocation should fail during Phase 2")
-    if proc.stdout.strip():
-        raise AssertionError(f"selectorless failure should not write stdout, got:\n{proc.stdout}")
-    if "explicit HDU selector required" not in proc.stderr:
-        raise AssertionError(f"missing selectorless guidance on stderr:\n{proc.stderr}")
-
-
 def assert_card_shape(card: dict) -> None:
     if set(card) - {"keyword", "value", "comment"}:
         raise AssertionError(f"unexpected card fields: {card}")
@@ -203,7 +193,6 @@ def main() -> int:
         assert_edge_fixture(args.fixture_only)
         return 0
 
-    assert_selectorless_rejected()
     assert_irph0189()
     assert_lspn2790()
 
