@@ -12,6 +12,7 @@ The locked Phase 4 contract distinguishes between:
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -95,25 +96,25 @@ def assert_repeatability() -> None:
 
 
 def assert_broken_pipe_behavior() -> None:
+    read_fd, write_fd = os.pipe()
+    os.close(read_fd)
+
     proc = subprocess.Popen(
         [str(BINARY), "testdata/IRPH0189.HDR"],
         cwd=REPO_ROOT,
-        stdout=subprocess.PIPE,
+        stdout=write_fd,
         stderr=subprocess.PIPE,
         text=False,
     )
+    os.close(write_fd)
 
-    if proc.stdout is None or proc.stderr is None:
-        raise AssertionError("failed to create broken-pipe probe pipes")
+    if proc.stderr is None:
+        raise AssertionError("failed to capture stderr for broken-pipe probe")
 
-    first_byte = proc.stdout.read(1)
-    proc.stdout.close()
     stderr = proc.stderr.read().decode("utf-8", errors="replace")
     proc.stderr.close()
     rc = proc.wait()
 
-    if not first_byte:
-        raise AssertionError("broken-pipe probe did not receive any initial stdout byte")
     if rc != 1:
         raise AssertionError(f"broken-pipe probe should exit 1, got {rc}\nstderr:\n{stderr}")
     if "fits2json:" not in stderr:
